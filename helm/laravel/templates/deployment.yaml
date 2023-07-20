@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nginx.fullname" . }}
+  labels:
+    {{- include "nginx.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "nginx.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "nginx.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "nginx.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c","sleep 5", "php artisan migrate:fresh"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: APP_NAME
+              value: Laravel
+            - name: APP_ENV
+              value: local
+            - name: APP_KEY
+              value: base64:h55oToUypq1BJwhcBAbtCnKscJGGS7xXF3zoDNf/yWE=
+            - name: APP_DEBUG
+              value: "true"
+            - name: APP_URL
+              value: http://cloud.tutofree.fr
+            - name: LOG_CHANNEL
+              value: stderr
+
+            - name: DB_CONNECTION
+              value: mysql
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: kubidb
+            - name: DB_USERNAME
+              value: kubisuer
+            - name: DB_PASSWORD
+              value: Rrgjdhjokef
+
+            - name: BROADCAST_DRIVER
+              value: log
+            - name: CACHE_DRIVER
+              value: file
+            - name: QUEUE_CONNECTION
+              value: rabbitmq
+            - name: SESSION_DRIVER
+              value: file
+            - name: SESSION_LIFETIME
+              value: "120"
+
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_DEFAULT_USER
+              value: user
+            - name: RABBITMQ_DEFAULT_PASS
+              value: I2NUowvIF4vd56oV
+            - name: RABBITMQ_DEFAULT_VHOST
+              value: /
+            - name: RABBITMQ_EXCHANGE_NAME
+              value: product.event
+            - name: RABBITMQ_EXCHANGE_TYPE
+              value: topic
+            - name: RABBITMQ_EXCHANGE_DURABLE
+              value: "false"
+            - name: RABBITMQ_TIMEOUT
+              value: "60"
+            - name: RABBITMQ_QUEUE
+              value: create 
+            - name: RABBITMQ_DRIVER
+              value: rabbitmq
+            - name: RABBITMQ_CONSUMER_TAG
+              value: consumer
+
+            - name: ELASTICSEARCH_USER
+              value: "user"
+            - name: ELASTICSEARCH_PASS
+              value: "user"
+            - name: ELASTICSEARCH_URI
+              value: http://elasticsearch:9200
+
+            # - name: ELASTICHSEARCH_HOST
+            #   value: elasticsearch
+            # - name: ELASTICHSEARCH_PORT
+            #   value: "9200"
+            # - name: ELASTICHSEARCH_SCHEME
+            #   value: http
+
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+          httpGet:
+              path: /api
+              port: 80
+          initialDelaySeconds: 15
+          failureThreshold: 3
+          periodSeconds: 3          
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,42 @@
+variables:
+  TF_PLAN : .tfplan
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+    - if: "$CI_COMMIT_REF_PROTECTED"
+    
+tf_plan:
+    stage: 🏗️ infra-tools plan
+    when: manual
+    script: 
+      - az login --service-principal -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} -t ${ARM_TENANT_ID} -o none
+      - cd $CI_PROJECT_DIR/terraform
+      - terraform init
+      - terraform plan -out $TF_PLAN
+    artifacts:
+      paths:
+        - $CI_PROJECT_DIR/terraform/$TF_PLAN
+    variables:
+      ARM_CLIENT_ID: ${ARM_CLIENT_ID}
+      ARM_CLIENT_SECRET: ${ARM_CLIENT_SECRET}
+      ARM_TENANT_ID: ${ARM_TENANT_ID} 
+      ARM_SUBSCRIPTION_ID: ${ARM_SUBSCRIPTION_ID}
+
+tf_apply:
+  stage: 🚀 infra-tools deploy
+  when: manual
+  script: 
+    - az login --service-principal -u ${ARM_CLIENT_ID} -p ${ARM_CLIENT_SECRET} -t ${ARM_TENANT_ID} -o none
+    - cd $CI_PROJECT_DIR/terraform
+    - terraform init
+    - terraform apply --auto-approve $TF_PLAN
+  dependencies:
+    - tf_plan
+  variables:
+    ARM_CLIENT_ID: ${ARM_CLIENT_ID}
+    ARM_CLIENT_SECRET: ${ARM_CLIENT_SECRET}
+    ARM_TENANT_ID: ${ARM_TENANT_ID}
+    ARM_SUBSCRIPTION_ID: ${ARM_SUBSCRIPTION_ID}
+
+ 

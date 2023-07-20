@@ -1,0 +1,8 @@
+apiVersion: v2
+name: reporting
+description: A Helm chart for Kubernetes for reporting
+type: application
+version: 0.2.0
+appVersion: "v2"
+
+icon: 'https://tutofree.fr/images/ampoule.png'

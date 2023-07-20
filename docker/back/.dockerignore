@@ -1,0 +1,6 @@
+.env
+/vendor
+./.dockerignore
+
+# Ignore files.
+helm/secrets.yaml

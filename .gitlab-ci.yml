@@ -1,0 +1,6 @@
+include:
+  - local: pipelines/gitlabci/terraform.yml
+  
+stages:
+  - 🏗️ infra-tools plan
+  - 🚀 infra-tools deploy
